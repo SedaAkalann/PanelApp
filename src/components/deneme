@@ -1,0 +1,4832 @@
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import { DataGrid, GridCheckIcon } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+  });
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{ mb: 2 }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Category"
+            value={editProduct?.category || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Size (comma separated)"
+            value={editProduct?.size.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Color (comma separated)"
+            value={editProduct?.color.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(event) =>
+              handleImageUpload(event, editProduct, setEditProduct)
+            }
+            sx={{
+              mb: 2,
+              display: "block",
+              borderRadius: "4px",
+              border: "1px solid #ddd",
+              padding: "6px",
+              backgroundColor: "#e3f2fd",
+              fontSize: "0.875rem",
+            }}
+          />
+          <List>
+            {editProduct?.fileNames?.map((fileName, index) => (
+              <ListItem key={index}>
+                {`Image ${index + 1} (${fileName})`}
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{
+              position: "absolute",
+              bottom: 16,
+              right: 16,
+              fontSize: "0.875rem",
+              padding: "6px 12px",
+            }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add New Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Category"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Size (comma separated)"
+            value={newProduct.size.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Color (comma separated)"
+            value={newProduct.color.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(event) =>
+              handleImageUpload(event, newProduct, setNewProduct)
+            }
+            sx={{
+              mb: 2,
+              display: "block",
+              borderRadius: "4px",
+              border: "1px solid #ddd",
+              padding: "6px",
+              backgroundColor: "#e3f2fd",
+              fontSize: "0.875rem",
+            }}
+          />
+          <List>
+            {newProduct?.fileNames?.map((fileName, index) => (
+              <ListItem key={index}>
+                {`Image${index + 1} (${fileName})`}
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{
+              position: "absolute",
+              bottom: 16,
+              right: 16,
+              fontSize: "0.875rem",
+              padding: "6px 12px",
+            }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+
+
+// -------------------------------------
+
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+
+const API_URL = "http://localhost:3000/products";
+
+// Mevcut ürünleri getir
+export const fetchProducts = createAsyncThunk(
+  "products/fetchProducts",
+  async () => {
+    try {
+      const response = await axios.get(API_URL);
+      return response.data;
+    } catch (error) {
+      console.error("API'den veri çekilemedi:", error);
+    }
+  }
+);
+
+// Yeni ürün ekle
+export const addProduct = createAsyncThunk(
+  "products/addProduct",
+  async (newProduct) => {
+    try {
+      const response = await axios.post(API_URL, newProduct);
+      return response.data;
+    } catch (error) {
+      console.error("Ürün eklenemedi:", error);
+    }
+  }
+);
+
+// Ürün sil
+export const deleteProduct = createAsyncThunk(
+  "products/deleteProduct",
+  async (productId) => {
+    try {
+      await axios.delete(`${API_URL}/${productId}`);
+      return productId;
+    } catch (error) {
+      console.error("Ürün silinemedi:", error);
+    }
+  }
+);
+
+// Ürün güncelle
+export const updateProduct = createAsyncThunk(
+  "products/updateProduct",
+  async (product) => {
+    try {
+      const response = await axios.put(`${API_URL}/${product.id}`, product);
+      return response.data;
+    } catch (error) {
+      console.error("Ürün güncellenemedi:", error);
+    }
+  }
+);
+
+// Renk ve beden seçeneklerini getir
+export const fetchProductDetails = createAsyncThunk(
+  "products/fetchProductDetails",
+  async ({ productId, type }) => {
+    try {
+      const response = await axios.get(`${API_URL}/${productId}`);
+      return { type, data: response.data };
+    } catch (error) {
+      console.error("Ürün detayları alınamadı:", error);
+    }
+  }
+);
+
+const initialState = {
+  products: [],
+  productColors: [],
+  productSizes: [],
+  status: "idle",
+  error: null,
+};
+
+export const productSlice = createSlice({
+  name: "products",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchProducts.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchProducts.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.products = action.payload;
+      })
+      .addCase(fetchProducts.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(addProduct.fulfilled, (state, action) => {
+        state.products.push(action.payload);
+      })
+      .addCase(deleteProduct.fulfilled, (state, action) => {
+        state.products = state.products.filter(
+          (product) => product.id !== action.payload
+        );
+      })
+      .addCase(updateProduct.fulfilled, (state, action) => {
+        state.products = state.products.map((product) =>
+          product.id === action.payload.id ? action.payload : product
+        );
+      })
+      .addCase(fetchProductDetails.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchProductDetails.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        if (action.payload.type === "color") {
+          state.productColors = action.payload.data.colors;
+        } else if (action.payload.type === "size") {
+          state.productSizes = action.payload.data.sizes;
+        }
+      })
+      .addCase(fetchProductDetails.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      });
+  },
+});
+
+export default productSlice.reducer;
+
+
+------------------------------------------
+
+[
+  {
+    "id": "1",
+    "title": "taşlı elbiseeeeee",
+    "description": "kadın taşlı elbise",
+    "category": "elbise",
+    "images": [
+      "./public/images/image1.jpeg",
+      "blob:http://localhost:5173/40845e97-934e-4305-8f96-338d364573ab",
+      "blob:http://localhost:5173/4951cd20-aef3-4821-821c-4ed5f6385a14"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ],
+    "fileNames": [
+      "image2.webp",
+      "image3.jpeg"
+    ]
+  },
+  {
+    "id": "2",
+    "title": "renkli elbise",
+    "description": "kadın renkli elbise",
+    "category": "elbise",
+    "images": [
+      "./public/images/image2.webp"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "3",
+    "title": "kısa yeşil elbise",
+    "description": "kadın yeşil elbise",
+    "category": "elbise",
+    "images": [
+      "./public/images/image3.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "4",
+    "title": " uzun elbise",
+    "description": "kadın uzun elbise",
+    "category": "elbise",
+    "images": [
+      "./public/images/image4.webp"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray",
+      "purple"
+    ]
+  },
+  {
+    "id": "5",
+    "title": "bol kesim jean",
+    "description": "kadın jean",
+    "category": "jean",
+    "images": [
+      "./public/images/image5.avif"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "6",
+    "title": "bol kesim düşük bel jean",
+    "description": "kadın düşük bel jean",
+    "category": "jean",
+    "images": [
+      "./public/images/image6.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "7",
+    "title": "kısa jean",
+    "description": "kadın jean şort",
+    "category": "crop",
+    "images": [
+      "./public/images/image7.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "8",
+    "title": "wide leg jean",
+    "description": "kadın wide leg jean",
+    "category": "jean",
+    "images": [
+      "./public/images/image8.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      42
+    ],
+    "color": [
+      "black",
+      "gray",
+      "blue"
+    ]
+  },
+  {
+    "id": "9",
+    "title": " bol kesim kısa etek",
+    "description": "kadın kısa etek",
+    "category": "skirt",
+    "images": [
+      "./public/images/image9.jpg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      40,
+      42
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "10",
+    "title": "gri desenli kısa etek",
+    "description": "kadın gri desenli kısa etek",
+    "category": "crop",
+    "images": [
+      "./public/images/image10.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      40
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "11",
+    "title": "desenli etek",
+    "description": "kadın desenli etek",
+    "category": "crop",
+    "images": [
+      "./public/images/image11.jpg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      38
+    ],
+    "color": [
+      "black",
+      "gray"
+    ]
+  },
+  {
+    "id": "12",
+    "title": "önü açık crop",
+    "description": "kadın önü açık crop",
+    "category": "crop",
+    "images": [
+      "./public/images/image12.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      38,
+      42
+    ],
+    "color": [
+      "black",
+      "gray",
+      "white"
+    ]
+  },
+  {
+    "id": "13",
+    "title": "crop top",
+    "description": "kadın crop top",
+    "category": "crop",
+    "images": [
+      "./public/images/image13.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      38,
+      42
+    ],
+    "color": [
+      "black",
+      "gray",
+      "pink"
+    ]
+  },
+  {
+    "id": "14",
+    "title": "bol kesim gömlek",
+    "description": "kadın bol kesim gömlek",
+    "category": "crop",
+    "images": [
+      "./public/images/image14.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      42,
+      44
+    ],
+    "color": [
+      "black",
+      "white",
+      "blue"
+    ]
+  },
+  {
+    "id": "15",
+    "title": "dar kesim gömlek",
+    "description": "kadın gömlek",
+    "category": "crop",
+    "images": [
+      "./public/images/image15.jpeg"
+    ],
+    "size": [
+      32,
+      34,
+      36,
+      38,
+      40
+    ],
+    "color": [
+      "black",
+      "gray",
+      "white"
+    ]
+  },
+  {
+    "id": "d1db",
+    "title": "ebise",
+    "description": "elbise",
+    "images": [
+      "blob:http://localhost:5173/648557d0-00ee-43b9-96cf-d381c73e3d93"
+    ],
+    "category": "elbise",
+    "size": [
+      "34",
+      "36"
+    ],
+    "color": [
+      "blue"
+    ],
+    "fileNames": [
+      "image3.jpeg"
+    ]
+  }
+]
+
+---------------------------------
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ColorLensIcon from "@mui/icons-material/ColorLens";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+  });
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const handleOpenSizeModal = () => {
+    setSizeModalOpen(true);
+  };
+
+  const handleCloseSizeModal = () => {
+    setSizeModalOpen(false);
+  };
+
+  const handleOpenColorModal = () => {
+    setColorModalOpen(true);
+  };
+
+  const handleCloseColorModal = () => {
+    setColorModalOpen(false);
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "size",
+      headerName: "Size",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={handleOpenSizeModal}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <VisibilityIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "color",
+      headerName: "Color",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={handleOpenColorModal}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ColorLensIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{ mb: 2 }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            label="Title"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{ mt: 2 }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add New Product
+          </Typography>
+          <TextField
+            label="Title"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{ mt: 2 }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={handleCloseSizeModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseSizeModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Sizes
+          </Typography>
+          <List>
+            {selectedProduct?.size?.map((size, index) => (
+              <ListItem key={index}>{size}</ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={handleCloseColorModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseColorModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Colors
+          </Typography>
+          <List>
+            {selectedProduct?.color?.map((color, index) => (
+              <ListItem key={index}>{color}</ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+-----------------------------------------------------------------
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ColorLensIcon from "@mui/icons-material/ColorLens";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+  });
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+    setNewProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const handleOpenSizeModal = () => {
+    setSizeModalOpen(true);
+  };
+
+  const handleCloseSizeModal = () => {
+    setSizeModalOpen(false);
+  };
+
+  const handleOpenColorModal = () => {
+    setColorModalOpen(true);
+  };
+
+  const handleCloseColorModal = () => {
+    setColorModalOpen(false);
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <IconButton onClick={() => handleOpenModal(params.row)}>
+            <ZoomInIcon />
+          </IconButton>
+        </Box>
+      ),
+    },
+    {
+      field: "size",
+      headerName: "Size",
+      width: 150,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <IconButton onClick={handleOpenSizeModal}>
+            <VisibilityIcon />
+          </IconButton>
+        </Box>
+      ),
+    },
+    {
+      field: "color",
+      headerName: "Color",
+      width: 150,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <IconButton onClick={handleOpenColorModal}>
+            <ColorLensIcon />
+          </IconButton>
+        </Box>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <IconButton
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{ marginTop: "30px", width: "100%", height: "calc(100vh - 100px)" }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Product Details
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((image, index) => (
+              <img
+                key={index}
+                src={image}
+                alt={`Product ${index}`}
+                style={{ maxWidth: "100%", marginBottom: "16px" }}
+              />
+            ))}
+          </Box>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            <strong>Title:</strong> {selectedProduct?.title}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            <strong>Description:</strong> {selectedProduct?.description}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            <strong>Category:</strong> {selectedProduct?.category}
+          </Typography>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            label="Title"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={editProduct?.category || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{ mt: 2 }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Add Product
+          </Typography>
+          <TextField
+            label="Title"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+          />
+          <Button variant="contained" component="label" sx={{ mt: 2 }}>
+            Upload Images
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              hidden
+            />
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{ mt: 2 }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={handleCloseSizeModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseSizeModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Available Sizes
+          </Typography>
+          <List>
+            {editProduct?.size?.map((size, index) => (
+              <ListItem key={index}>{size}</ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={handleCloseColorModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            onClick={handleCloseColorModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Available Colors
+          </Typography>
+          <List>
+            {editProduct?.color?.map((color, index) => (
+              <ListItem key={index}>{color}</ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+
+
+-------------------------------
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import PaletteIcon from "@mui/icons-material/Palette";
+import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+  });
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "colors",
+      headerName: "Colors",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setColorModalOpen(true);
+          }}
+        >
+          <PaletteIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "sizes",
+      headerName: "Sizes",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setSizeModalOpen(true);
+          }}
+        >
+          <FormatSizeIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{ mb: 2 }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={() => setColorModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={() => setColorModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Colors
+          </Typography>
+          <List>
+            {selectedProduct?.color?.map((color, index) => (
+              <ListItem key={index}>
+                <Typography>{color}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={() => setSizeModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={() => setSizeModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Sizes
+          </Typography>
+          <List>
+            {selectedProduct?.size?.map((size, index) => (
+              <ListItem key={index}>
+                <Typography>{size}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add New Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            variant="outlined"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{ mt: 2 }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            variant="outlined"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, editProduct, setEditProduct)}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{ mt: 2 }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+-----------------------------------------------------------------------
+
+
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import PaletteIcon from "@mui/icons-material/Palette";
+import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+    fileNames: [],
+  });
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+      fileNames: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "colors",
+      headerName: "Colors",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setColorModalOpen(true);
+          }}
+        >
+          <PaletteIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "sizes",
+      headerName: "Sizes",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setSizeModalOpen(true);
+          }}
+        >
+          <FormatSizeIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{ mb: 2 }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={() => setColorModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={() => setColorModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Colors
+          </Typography>
+          <List>
+            {selectedProduct?.color?.map((color, index) => (
+              <ListItem key={index}>
+                <Typography>{color}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={() => setSizeModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={() => setSizeModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Sizes
+          </Typography>
+          <List>
+            {selectedProduct?.size?.map((size, index) => (
+              <ListItem key={index}>
+                <Typography>{size}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add New Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            variant="outlined"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Category"
+            variant="outlined"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Colors (comma separated)"
+            variant="outlined"
+            value={newProduct.color.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                color: e.target.value.split(",").map((item) => item.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Sizes (comma separated)"
+            variant="outlined"
+            value={newProduct.size.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                size: e.target.value.split(",").map((item) => item.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+            sx={{ mb: 2 }}
+          />
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1">Selected Images:</Typography>
+            <List>
+              {newProduct.fileNames.map((fileName, index) => (
+                <ListItem key={index}>
+                  <Typography>{fileName}</Typography>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{ mt: 2 }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            variant="outlined"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Category"
+            variant="outlined"
+            value={editProduct?.category || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Colors (comma separated)"
+            variant="outlined"
+            value={editProduct?.color?.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                color: e.target.value.split(",").map((item) => item.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Sizes (comma separated)"
+            variant="outlined"
+            value={editProduct?.size?.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                size: e.target.value.split(",").map((item) => item.trim()),
+              })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, editProduct, setEditProduct)}
+            sx={{ mb: 2 }}
+          />
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1">Selected Images:</Typography>
+            <List>
+              {editProduct?.fileNames?.map((fileName, index) => (
+                <ListItem key={index}>
+                  <Typography>{fileName}</Typography>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{ mt: 2 }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+---------------------------------
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import PaletteIcon from "@mui/icons-material/Palette";
+import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+    fileNames: [],
+  });
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+      fileNames: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "colors",
+      headerName: "Colors",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setColorModalOpen(true);
+          }}
+        >
+          <PaletteIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "sizes",
+      headerName: "Sizes",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setSizeModalOpen(true);
+          }}
+        >
+          <FormatSizeIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{
+          mb: 2,
+          backgroundColor: "#90caf9",
+          border: "none",
+          "&:hover": { backgroundColor: "#64b5f6" },
+        }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            margin="normal"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            margin="normal"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+          />
+          <TextField
+            label="Size"
+            fullWidth
+            margin="normal"
+            value={newProduct.size.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+          />
+          <TextField
+            label="Color"
+            fullWidth
+            margin="normal"
+            value={newProduct.color.join(", ")}
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+          />
+          <Input
+            type="file"
+            inputProps={{ multiple: true }}
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+            sx={{
+              display: "none",
+            }}
+            id="upload-button"
+          />
+          <label htmlFor="upload-button">
+            <Button
+              variant="contained"
+              component="span"
+              sx={{
+                mb: 2,
+                backgroundColor: "#90caf9",
+                border: "none",
+                "&:hover": { backgroundColor: "#64b5f6" },
+              }}
+            >
+              Dosya Seç
+            </Button>
+          </label>
+          <List>
+            {newProduct.fileNames.map((fileName, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{fileName}</Typography>
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 2,
+              backgroundColor: "#90caf9",
+              border: "none",
+              "&:hover": { backgroundColor: "#64b5f6" },
+            }}
+            onClick={handleAddProduct}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            margin="normal"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            margin="normal"
+            value={editProduct?.category || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+          />
+          <TextField
+            label="Size"
+            fullWidth
+            margin="normal"
+            value={editProduct?.size?.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+          />
+          <TextField
+            label="Color"
+            fullWidth
+            margin="normal"
+            value={editProduct?.color?.join(", ") || ""}
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+          />
+          <Input
+            type="file"
+            inputProps={{ multiple: true }}
+            onChange={(e) => handleImageUpload(e, editProduct, setEditProduct)}
+            sx={{
+              display: "none",
+            }}
+            id="upload-edit-button"
+          />
+          <label htmlFor="upload-edit-button">
+            <Button
+              variant="contained"
+              component="span"
+              sx={{
+                mb: 2,
+                backgroundColor: "#90caf9",
+                border: "none",
+                "&:hover": { backgroundColor: "#64b5f6" },
+              }}
+            >
+              Dosya Seç
+            </Button>
+          </label>
+          <List>
+            {editProduct?.fileNames?.map((fileName, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{fileName}</Typography>
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 2,
+              backgroundColor: "#90caf9",
+              border: "none",
+              "&:hover": { backgroundColor: "#64b5f6" },
+            }}
+            onClick={handleSaveChanges}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+---------------------------------------------------
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import PaletteIcon from "@mui/icons-material/Palette";
+import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+    fileNames: [],
+  });
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+      fileNames: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "colors",
+      headerName: "Colors",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setColorModalOpen(true);
+          }}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <PaletteIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "sizes",
+      headerName: "Sizes",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setSizeModalOpen(true);
+          }}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <FormatSizeIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{
+          mb: 2,
+          backgroundColor: "#90caf9",
+          border: "none",
+          "&:hover": { backgroundColor: "#64b5f6" },
+        }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseAddModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            margin="normal"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            margin="normal"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+          />
+          <TextField
+            label="Size (Separate with commas)"
+            fullWidth
+            margin="normal"
+            value={newProduct.size.join(", ")}
+            helperText="Please separate sizes with commas."
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+          />
+          <TextField
+            label="Color (Separate with commas)"
+            fullWidth
+            margin="normal"
+            value={newProduct.color.join(", ")}
+            helperText="Please separate colors with commas."
+            onChange={(e) =>
+              setNewProduct({
+                ...newProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+          />
+          <Input
+            type="file"
+            inputProps={{ multiple: true }}
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+            sx={{
+              display: "none",
+            }}
+            id="upload-button"
+          />
+          <label htmlFor="upload-button">
+            <Button
+              variant="contained"
+              component="span"
+              sx={{
+                mb: 2,
+                backgroundColor: "#90caf9",
+                border: "none",
+                "&:hover": { backgroundColor: "#64b5f6" },
+              }}
+            >
+              Dosya Seç
+            </Button>
+          </label>
+          <List>
+            {newProduct.fileNames.map((fileName, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{fileName}</Typography>
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 2,
+              backgroundColor: "#90caf9",
+              border: "none",
+              "&:hover": { backgroundColor: "#64b5f6" },
+            }}
+            onClick={handleAddProduct}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseEditModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            margin="normal"
+            value={editProduct?.title || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+            value={editProduct?.description || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            margin="normal"
+            value={editProduct?.category || ""}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+          />
+          <TextField
+            label="Size (Separate with commas)"
+            fullWidth
+            margin="normal"
+            value={editProduct?.size?.join(", ") || ""}
+            helperText="Please separate sizes with commas."
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                size: e.target.value.split(",").map((s) => s.trim()),
+              })
+            }
+          />
+          <TextField
+            label="Color (Separate with commas)"
+            fullWidth
+            margin="normal"
+            value={editProduct?.color?.join(", ") || ""}
+            helperText="Please separate colors with commas."
+            onChange={(e) =>
+              setEditProduct({
+                ...editProduct,
+                color: e.target.value.split(",").map((c) => c.trim()),
+              })
+            }
+          />
+          <Input
+            type="file"
+            inputProps={{ multiple: true }}
+            onChange={(e) => handleImageUpload(e, editProduct, setEditProduct)}
+            sx={{
+              display: "none",
+            }}
+            id="upload-edit-button"
+          />
+          <label htmlFor="upload-edit-button">
+            <Button
+              variant="contained"
+              component="span"
+              sx={{
+                mb: 2,
+                backgroundColor: "#90caf9",
+                border: "none",
+                "&:hover": { backgroundColor: "#64b5f6" },
+              }}
+            >
+              Dosya Seç
+            </Button>
+          </label>
+          <List>
+            {editProduct?.fileNames?.map((fileName, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{fileName}</Typography>
+              </ListItem>
+            ))}
+          </List>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 2,
+              backgroundColor: "#90caf9",
+              border: "none",
+              "&:hover": { backgroundColor: "#64b5f6" },
+            }}
+            onClick={handleSaveChanges}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={() => setColorModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={() => setColorModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Colors
+          </Typography>
+          <List>
+            {selectedProduct?.color?.map((color, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{color}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={() => setSizeModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={() => setSizeModalOpen(false)}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Sizes
+          </Typography>
+          <List>
+            {selectedProduct?.size?.map((size, index) => (
+              <ListItem
+                key={index}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Typography sx={{ color: "#90caf9", marginRight: 1 }}>
+                  •
+                </Typography>
+                <Typography>{size}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+güzeeeeeel
+---------------------------------------------------------------
+
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  addProduct,
+  deleteProduct,
+  updateProduct,
+} from "../Redux/productSlice";
+import {
+  Modal,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  Typography,
+  Input,
+  List,
+  ListItem,
+} from "@mui/material";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import PaletteIcon from "@mui/icons-material/Palette";
+import FormatSizeIcon from "@mui/icons-material/FormatSize";
+import { DataGrid } from "@mui/x-data-grid";
+import "../css/productList.css";
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.products.products);
+  const status = useSelector((state) => state.products.status);
+  const error = useSelector((state) => state.products.error);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: "",
+    description: "",
+    images: [],
+    category: "",
+    size: [],
+    color: [],
+    fileNames: [],
+  });
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [sizeModalOpen, setSizeModalOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  const handleOpenModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleOpenEditModal = (product) => {
+    setEditProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditProduct(null);
+  };
+
+  const handleSaveChanges = () => {
+    dispatch(updateProduct(editProduct));
+    handleCloseEditModal();
+  };
+
+  const handleOpenAddModal = () => {
+    setAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setAddModalOpen(false);
+    setNewProduct({
+      title: "",
+      description: "",
+      images: [],
+      category: "",
+      size: [],
+      color: [],
+      fileNames: [],
+    });
+  };
+
+  const handleAddProduct = () => {
+    dispatch(addProduct(newProduct));
+    handleCloseAddModal();
+  };
+
+  const handleDeleteProduct = (productId) => {
+    dispatch(deleteProduct(productId));
+  };
+
+  const handleImageUpload = (event, product, setProduct) => {
+    const files = Array.from(event.target.files);
+    const fileNames = files.map((file) => file.name);
+    const imageUrls = files.map((file) => URL.createObjectURL(file));
+
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      images: [...prevProduct.images, ...imageUrls],
+      fileNames: [...(prevProduct.fileNames || []), ...fileNames],
+    }));
+  };
+
+  const columns = [
+    { field: "id", headerName: "Product ID", width: 150 },
+    { field: "title", headerName: "Product Title", width: 200 },
+    { field: "description", headerName: "Description", width: 300 },
+    { field: "category", headerName: "Category", width: 150 },
+    {
+      field: "images",
+      headerName: "View Images",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => handleOpenModal(params.row)}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <ZoomInIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "colors",
+      headerName: "Colors",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setColorModalOpen(true);
+          }}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <PaletteIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "sizes",
+      headerName: "Sizes",
+      width: 150,
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => {
+            setSelectedProduct(params.row);
+            setSizeModalOpen(true);
+          }}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <FormatSizeIcon style={{ fontSize: "24px" }} />
+        </IconButton>
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton
+            size="large"
+            color="success"
+            onClick={() => handleOpenEditModal(params.row)}
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            onClick={() => handleDeleteProduct(params.row.id)}
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "failed") return <div>Error: {error}</div>;
+
+  return (
+    <Box
+      sx={{
+        marginTop: "30px",
+        width: "100%",
+        height: "calc(100vh - 100px)",
+        "& .MuiDataGrid-root": {
+          border: "none",
+          "& .MuiDataGrid-virtualScroller": {
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          },
+        },
+        "& .MuiDataGrid-cell": {
+          borderBottom: "1px solid #ddd",
+        },
+      }}
+    >
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{
+          mb: 2,
+          backgroundColor: "#90caf9",
+          border: "none",
+          "&:hover": { backgroundColor: "#64b5f6" },
+        }}
+        onClick={handleOpenAddModal}
+      >
+        Add Product
+      </Button>
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid rows={products} columns={columns} pageSize={5} />
+      </div>
+
+      {/* Product Details Modal */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 600,
+            maxHeight: "80%",
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#90caf9",
+              borderRadius: "10px",
+            },
+          }}
+        >
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Product Images
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {selectedProduct?.images?.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`${selectedProduct.title} - ${index + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "300px",
+                  marginBottom: "10px",
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Add Product Modal */}
+      <Modal open={addModalOpen} onClose={handleCloseAddModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Add New Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            variant="outlined"
+            value={newProduct.title}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            variant="outlined"
+            value={newProduct.description}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            variant="outlined"
+            value={newProduct.category}
+            onChange={(e) =>
+              setNewProduct({ ...newProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Input
+            type="file"
+            multiple
+            onChange={(e) => handleImageUpload(e, newProduct, setNewProduct)}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddProduct}
+            sx={{ mb: 2 }}
+          >
+            Add Product
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal open={editModalOpen} onClose={handleCloseEditModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Edit Product
+          </Typography>
+          <TextField
+            label="Title"
+            fullWidth
+            variant="outlined"
+            value={editProduct?.title}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, title: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            variant="outlined"
+            value={editProduct?.description}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, description: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            variant="outlined"
+            value={editProduct?.category}
+            onChange={(e) =>
+              setEditProduct({ ...editProduct, category: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveChanges}
+            sx={{ mb: 2 }}
+          >
+            Save Changes
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Color Modal */}
+      <Modal open={colorModalOpen} onClose={() => setColorModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Select Colors
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            {["red", "blue", "green", "yellow", "black"].map((color) => (
+              <Button
+                key={color}
+                sx={{
+                  backgroundColor: color,
+                  color: "#fff",
+                  "&:hover": { opacity: 0.8 },
+                  ...(selectedProduct?.color?.includes(color) && {
+                    border: "2px solid #000",
+                  }),
+                }}
+                disabled={!selectedProduct?.color?.includes(color)}
+                onClick={() =>
+                  setSelectedProduct((prevProduct) => ({
+                    ...prevProduct,
+                    color: prevProduct.color.includes(color)
+                      ? prevProduct.color.filter((c) => c !== color)
+                      : [...prevProduct.color, color],
+                  }))
+                }
+              >
+                {color}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Size Modal */}
+      <Modal open={sizeModalOpen} onClose={() => setSizeModalOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: "8px",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+            Select Sizes
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            {Array.from({ length: 13 }, (_, i) => i + 32).map((size) => (
+              <Button
+                key={size}
+                sx={{
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  padding: "8px",
+                  margin: "4px",
+                  ...(selectedProduct?.size?.includes(size) && {
+                    backgroundColor: "#90caf9",
+                    color: "#fff",
+                  }),
+                  "&:disabled": {
+                    opacity: 0.5,
+                    cursor: "not-allowed",
+                  },
+                }}
+                disabled={!selectedProduct?.size?.includes(size)}
+                onClick={() =>
+                  setSelectedProduct((prevProduct) => ({
+                    ...prevProduct,
+                    size: prevProduct.size.includes(size)
+                      ? prevProduct.size.filter((s) => s !== size)
+                      : [...prevProduct.size, size],
+                  }))
+                }
+              >
+                {size}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      </Modal>
+    </Box>
+  );
+};
+
+export default ProductList;
+ size kısmı ve de color kısmı binevi oldu ama kodun diğer kısımları GridCheckIcon
+ ----------------------------------------------------------------------------
+
+
+ 

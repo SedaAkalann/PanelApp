@@ -1,0 +1,35 @@
+.rain-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.rain-drop {
+  box-shadow: 0 0 10px rgba(0, 0, 255, 0.6); /* 3D etkisi için gölge */
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  background: rgba(0, 0, 255, 0.4);
+  opacity: 1;
+  border-radius: 50%;
+  animation: fall 8s linear infinite;
+  animation-delay: calc(-0.5s * var(--i));
+  transform: translateY(-100vh); /* Başlangıçta ekran dışında */
+  will-change: transform, opacity;
+}
+
+@keyframes fall {
+  from {
+    opacity: 0.8;
+    transform: translateY(-100vh) scale(0.8);
+  }
+  to {
+    transform: translateY(100vh) scale(1);
+    opacity: 1;
+  }
+}

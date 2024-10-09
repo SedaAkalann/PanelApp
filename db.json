@@ -1,0 +1,490 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "admin@admin.com",
+      "password": "Admin123"
+    },
+    {
+      "id": "1bce",
+      "email": "sedaakalan4@hotmail.com",
+      "password": "Sanane159"
+    },
+    {
+      "id": "64cd",
+      "email": "sedaakalan4@gmail.com",
+      "password": "Sananebemal159"
+    },
+    {
+      "id": "fde5",
+      "email": "sedaakalan4@gmail.com",
+      "password": "Sananebemal159"
+    },
+    {
+      "id": "f08c",
+      "email": "seda@gmail.com",
+      "password": "Sedos123"
+    },
+    {
+      "id": "a9ef",
+      "email": "gunes@gmail.com",
+      "password": "Gunes123"
+    },
+    {
+      "id": "3a65",
+      "email": "seda@gmail.com",
+      "password": "Sananeya159"
+    },
+    {
+      "id": "87af",
+      "email": "seda@hotmail.com",
+      "password": "Sanane159."
+    },
+    {
+      "id": "8fb4",
+      "email": "ozan@hotmail.com",
+      "password": "Sanane123"
+    },
+    {
+      "id": "76f5",
+      "email": "seda@gmail.com",
+      "password": "Admin1234"
+    },
+    {
+      "id": "0e01",
+      "email": "gaplsoy@gmail.com",
+      "password": "Gunes123"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "title": "taşlı elbise deneme123",
+      "description": "kadın taşlı elbise",
+      "category": "elbise",
+      "images": [
+        "./public/images/image1.jpeg",
+        "blob:http://localhost:5173/40845e97-934e-4305-8f96-338d364573ab",
+        "blob:http://localhost:5173/4951cd20-aef3-4821-821c-4ed5f6385a14",
+        "blob:http://localhost:5173/832adcd5-1791-444f-8ebe-a4183963c163"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        38,
+        42
+      ],
+      "color": [
+        "black",
+        "gray",
+        "brown"
+      ],
+      "fileNames": [
+        "image2.webp",
+        "image3.jpeg",
+        "image14.jpeg"
+      ]
+    },
+    {
+      "id": "2",
+      "title": "renkli elbise",
+      "description": "kadın renkli elbise",
+      "category": "elbise",
+      "images": [
+        "./public/images/image2.webp"
+      ],
+      "size": [
+        32,
+        34,
+        36
+      ],
+      "color": [
+        "black",
+        "gray"
+      ]
+    },
+    {
+      "id": "3",
+      "title": "kısa yeşil elbise",
+      "description": "kadın yeşil elbise",
+      "category": "elbise",
+      "images": [
+        "./public/images/image3.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36
+      ],
+      "color": [
+        "black",
+        "gray",
+        "pink"
+      ]
+    },
+    {
+      "id": "4",
+      "title": " uzun elbise",
+      "description": "kadın uzun elbise",
+      "category": "elbise",
+      "images": [
+        "./public/images/image4.webp"
+      ],
+      "size": [
+        32,
+        34,
+        36
+      ],
+      "color": [
+        "black",
+        "gray",
+        "purple"
+      ]
+    },
+    {
+      "id": "5",
+      "title": "bol kesim jean",
+      "description": "kadın jean",
+      "category": "jean",
+      "images": [
+        "./public/images/image5.avif"
+      ],
+      "size": [
+        32,
+        34,
+        36
+      ],
+      "color": [
+        "black",
+        "gold"
+      ]
+    },
+    {
+      "id": "6",
+      "title": "bol kesim düşük bel jean",
+      "description": "kadın düşük bel jean",
+      "category": "jean",
+      "images": [
+        "./public/images/image6.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36
+      ],
+      "color": [
+        "black",
+        "gray",
+        "gold"
+      ]
+    },
+    {
+      "id": "7",
+      "title": "kısa jean",
+      "description": "kadın jean şort",
+      "category": "crop",
+      "images": [
+        "./public/images/image7.jpeg"
+      ],
+      "size": [
+        34,
+        38,
+        44
+      ],
+      "color": [
+        "black",
+        "gray"
+      ]
+    },
+    {
+      "id": "8",
+      "title": "wide leg jean",
+      "description": "kadın wide leg jean",
+      "category": "jean",
+      "images": [
+        "./public/images/image8.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        42
+      ],
+      "color": [
+        "black",
+        "gray",
+        "blue"
+      ]
+    },
+    {
+      "id": "9",
+      "title": " bol kesim kısa etek",
+      "description": "kadın kısa etek",
+      "category": "skirt",
+      "images": [
+        "./public/images/image9.jpg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        40,
+        42
+      ],
+      "color": [
+        "black",
+        "gray"
+      ]
+    },
+    {
+      "id": "10",
+      "title": "gri desenli kısa etek",
+      "description": "kadın gri desenli kısa etek",
+      "category": "crop",
+      "images": [
+        "./public/images/image10.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        40
+      ],
+      "color": [
+        "black",
+        "gray"
+      ]
+    },
+    {
+      "id": "11",
+      "title": "desenli etek",
+      "description": "kadın desenli etek",
+      "category": "crop",
+      "images": [
+        "./public/images/image11.jpg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        38
+      ],
+      "color": [
+        "black",
+        "gray"
+      ]
+    },
+    {
+      "id": "12",
+      "title": "önü açık crop",
+      "description": "kadın önü açık crop",
+      "category": "crop",
+      "images": [
+        "./public/images/image12.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        38,
+        42
+      ],
+      "color": [
+        "black",
+        "gray",
+        "white"
+      ]
+    },
+    {
+      "id": "13",
+      "title": "crop top",
+      "description": "kadın crop top",
+      "category": "crop",
+      "images": [
+        "./public/images/image13.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        38,
+        42
+      ],
+      "color": [
+        "black",
+        "gray",
+        "pink"
+      ]
+    },
+    {
+      "id": "14",
+      "title": "bol kesim gömlek",
+      "description": "kadın bol kesim gömlek",
+      "category": "crop",
+      "images": [
+        "./public/images/image14.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        42,
+        44
+      ],
+      "color": [
+        "black",
+        "white",
+        "blue"
+      ]
+    },
+    {
+      "id": "15",
+      "title": "dar kesim gömlek",
+      "description": "kadın gömlek",
+      "category": "crop",
+      "images": [
+        "./public/images/image15.jpeg"
+      ],
+      "size": [
+        32,
+        34,
+        36,
+        38,
+        40
+      ],
+      "color": [
+        "black",
+        "gray",
+        "white"
+      ]
+    },
+    {
+      "id": "d1db",
+      "title": "ebise",
+      "description": "elbise",
+      "images": [
+        "blob:http://localhost:5173/648557d0-00ee-43b9-96cf-d381c73e3d93"
+      ],
+      "category": "elbise",
+      "size": [
+        "34",
+        "36"
+      ],
+      "color": [
+        "blue"
+      ],
+      "fileNames": [
+        "image3.jpeg"
+      ]
+    },
+    {
+      "id": "b3de",
+      "title": "şşşş",
+      "description": "",
+      "images": [
+        "blob:http://localhost:5173/69c460a5-0e3f-47e5-9e68-ca4606d1608e"
+      ],
+      "category": "",
+      "size": [],
+      "color": [],
+      "fileNames": [
+        "image15.jpeg"
+      ]
+    },
+    {
+      "id": "4ef8",
+      "title": "",
+      "description": "",
+      "images": [],
+      "category": "",
+      "size": [],
+      "color": [],
+      "fileNames": []
+    },
+    {
+      "id": "1535",
+      "title": "sss",
+      "description": "sSs",
+      "images": [
+        "blob:http://localhost:5173/5682ba05-aa8e-4da5-896f-2ecba8c90f51"
+      ],
+      "category": "SsS",
+      "size": [
+        "32",
+        "34",
+        "38",
+        "44"
+      ],
+      "color": [
+        "red",
+        "black",
+        "blue"
+      ],
+      "fileNames": [
+        "image14.jpeg"
+      ]
+    },
+    {
+      "id": "8c64",
+      "title": "rfff",
+      "description": "",
+      "images": [],
+      "category": "",
+      "size": [],
+      "color": [],
+      "fileNames": []
+    },
+    {
+      "id": "d22b",
+      "title": "ddasda",
+      "description": "dasdad",
+      "images": [],
+      "category": "dadsad",
+      "size": [
+        "das"
+      ],
+      "color": [
+        "dasdada"
+      ],
+      "fileNames": []
+    },
+    {
+      "id": "8e39",
+      "title": "",
+      "description": "",
+      "images": [],
+      "category": "",
+      "size": [],
+      "color": [
+        "pink",
+        "brown",
+        "gold"
+      ],
+      "fileNames": []
+    },
+    {
+      "id": "43dd",
+      "title": "",
+      "description": "",
+      "images": [],
+      "category": "",
+      "size": [],
+      "color": [],
+      "fileNames": []
+    },
+    {
+      "id": "5017",
+      "title": "",
+      "description": "",
+      "images": [],
+      "category": "",
+      "size": [
+        "34",
+        "38",
+        "44"
+      ],
+      "color": [],
+      "fileNames": []
+    }
+  ]
+}
